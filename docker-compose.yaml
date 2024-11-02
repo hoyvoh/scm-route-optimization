@@ -5,7 +5,8 @@ services:
     build:
       context: ./route_optimizer
       dockerfile: .Dockerfile
-    ports: -"8000:8000"
+    ports:
+      - "8000:8000"
     networks:
       - sharedNetwork
     env_file:
