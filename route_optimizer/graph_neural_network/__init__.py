@@ -1,3 +1,4 @@
-from main import optimize
+from .main import optimize
 
 __all__ = ['optimize']
+

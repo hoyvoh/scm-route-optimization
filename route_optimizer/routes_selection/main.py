@@ -22,13 +22,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-# 'AlzaSy-L-OycIT3WSfwTR-dyE_Q0TmtfqArvD9a'(0)
-# AlzaSyXYUfjJjtewNv2GSgZjonLnDcZLWQN1rFz
-#
-# 
-# 
-
-API_KEY = 'AlzaSyT_RJLWIUDUGuUDO3XrtNEdiGlOsBpbNlf' #os.getenv('GOMAP_API_KEY')
+API_KEY = os.getenv('GOMAP_API_KEY')
 
 def convert_to_hours(time_str):
     """Convert Vietnamese time format to hours."""
@@ -157,24 +151,6 @@ def route_selection(suppliers, parking_areas, destination, vehicles):
     end = time()
     print(f'== Possible routes calculation finished after {end-start}s! ==')
     return routes
-
-'''
-1/haeley05@centreszv.com
-0928989820
-AlzaSyXYUfjJjtewNv2GSgZjonLnDcZLWQN1rFz
-###
-2/pastelgreen3@centreszv.com
-02488874198
-AlzaSycUzNof1yvz35n5Y4oySHTdCZDFb1ICx7k
-###
-3/heath44@centreszv.com
-02855581772
-AlzaSyKofIAJhrtKuqcQl5RhAFrdPzPJk7GgObR
-###
-4/elaina632@centreszv.com
-0859280755
-AlzaSyT_RJLWIUDUGuUDO3XrtNEdiGlOsBpbNlf
-'''
 
 if __name__ == '__main__':
 
