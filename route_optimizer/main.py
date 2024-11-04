@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
+from dateutil import parser
 
 import os
 import sys
@@ -16,13 +18,27 @@ import graph_neural_network
 import linear_algorithm
 from routes_selection import hard_route
 
+def filter_meaningful_routes(routes):
+    return [route for route in routes if route['travel_kms'] != 0.0]
+
 def check_dest(destination):
     if destination['address'] in destination_v2['address'].to_list():
         # return selected routes
-        return hard_route[destination['address']]
+        return filter_meaningful_routes(hard_route[destination['address']])
     else:
         print("Route selection process started for a new destination...\n\nIt will takes up to 10 minutes to compute.\n\n")
-        return route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5])
+        return filter_meaningful_routes(route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5]))
+
+
+def parse_any_date(date_string):
+    try:
+        # Attempt to parse using dateutil
+        parsed_date = parser.parse(date_string)
+        # Return just the date if no time is needed, or the full datetime object
+        return parsed_date.date()  # for datetime only: use parsed_date
+    except (ValueError, TypeError) as e:
+        print(f"Error parsing date: {e}")
+        return None
 
 class Plan(BaseModel):
     plan_id: str
@@ -54,20 +70,21 @@ async def root():
 async def root(plan:Plan):
     destination = {
         'id':plan.plan_id,
-        'destination':plan.destination
+        'address':plan.destination
     }
+    deadline = parse_any_date(plan.deadline)
 
     all_possible_routes = check_dest(destination=destination)
     
-    plan1 = genetic_algorithm.optimize(routes_data=all_possible_routes, 
+    plan1 = genetic_algorithm.optimize(route_data=all_possible_routes, 
                                       demand=plan.demand,
-                                      deadline=plan.deadline)
+                                      deadline=deadline)
     plan3 = linear_algorithm.optimize(routes_data=all_possible_routes, 
                                       demand=plan.demand,
-                                      deadline=plan.deadline)
+                                      deadline=deadline)
     plan2 = graph_neural_network.optimize(routes_data=all_possible_routes, 
                                       demand=plan.demand,
-                                      deadline=plan.deadline)
+                                      deadline=deadline)
     
     results = {
         "plan_id":plan.plan_id,
