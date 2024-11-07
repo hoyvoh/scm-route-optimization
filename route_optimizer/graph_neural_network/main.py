@@ -21,7 +21,7 @@ from routes_selection import hard_route
 model_configs = {
     'learning_rate':0.1,
     'epochs':100,
-    'penalty_factor': 10000 # set to a test num
+    'penalty_factor': 1000 # set to a test num
 }
 
 class RouteOptimizerGCN(nn.Module):

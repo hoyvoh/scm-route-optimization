@@ -2,13 +2,13 @@ id,registered_num,vehicle_name,capacity,kilometer_driven
 vehicle_0,66LD 94467,Howo T5G,20,854
 vehicle_1,51LD 38199,Hyundai Xcient,18,1008
 vehicle_2,66LD 93106,Hino FG8JT7A,15,945
-vehicle_3,53LD 10175,Dongfeng Hoàng Huy B180,9,597
+vehicle_3,53LD 10175,Dongfeng B180,9,597
 vehicle_4,68LD 67509,Fuso FI170,8,696
 vehicle_5,58LD 46798,Isuzu FVM34T,15,628
 vehicle_6,55LD 86695,Jac HFC1383K,14,1186
 vehicle_7,54LD 37361,Fuso FI170,8,663
-vehicle_8,65LD 67182,Dongfeng Hoàng Huy B180,9,619
-vehicle_9,63LD 11944,Dongfeng Hoàng Huy B180,9,533
+vehicle_8,65LD 67182,Dongfeng B180,9,619
+vehicle_9,63LD 11944,Dongfeng B180,9,533
 vehicle_10,59LD 6724,Isuzu FVM34T,15,757
 vehicle_11,66LD 40417,Thaco Auman C240,17,1110
 vehicle_12,63LD 68992,Howo T5G,20,604
@@ -16,36 +16,6 @@ vehicle_13,64LD 86779,Hyundai Xcient,18,1061
 vehicle_14,65LD 6098,Tata Ultra 1014,8,655
 vehicle_15,57LD 83945,Howo T5G,20,965
 vehicle_16,66LD 16841,Jac HFC1383K,14,963
-vehicle_17,57LD 12682,Dongfeng Hoàng Huy B180,9,722
+vehicle_17,57LD 12682,Dongfeng B180,9,722
 vehicle_18,64LD 4233,Isuzu FVM34T,15,629
 vehicle_19,56LD 37911,Hino FG8JT7A,15,979
-vehicle_20,51LD 77173,Dongfeng Hoàng Huy B180,9,709
-vehicle_21,63LD 99061,Thaco Auman C240,17,766
-vehicle_22,68LD 86256,Hino FG8JT7A,15,812
-vehicle_23,66LD 4577,Hino FG8JT7A,15,1127
-vehicle_24,52LD 56708,Fuso FI170,8,581
-vehicle_25,51LD 35768,Howo T5G,20,819
-vehicle_26,50LD 65653,Hyundai HD120SL,8,677
-vehicle_27,66LD 48535,Hino FG8JT7A,15,988
-vehicle_28,58LD 74903,Hyundai Xcient,18,765
-vehicle_29,52LD 59065,Thaco Auman C240,17,858
-vehicle_30,54LD 52798,Tata Ultra 1014,8,556
-vehicle_31,59LD 3891,Hyundai Xcient,18,1177
-vehicle_32,63LD 33159,Howo T5G,20,571
-vehicle_33,59LD 78132,Hino FG8JT7A,15,637
-vehicle_34,67LD 40655,Howo T5G,20,899
-vehicle_35,57LD 38957,Jac HFC1383K,14,756
-vehicle_36,68LD 64967,Jac HFC1383K,14,1024
-vehicle_37,53LD 41039,Tata Ultra 1014,8,730
-vehicle_38,52LD 68249,Jac HFC1383K,14,619
-vehicle_39,67LD 43013,Hyundai HD120SL,8,665
-vehicle_40,68LD 22338,Tata Ultra 1014,8,521
-vehicle_41,54LD 46964,Fuso FI170,8,410
-vehicle_42,64LD 49201,Hino FG8JT7A,15,928
-vehicle_43,64LD 35733,Jac HFC1383K,14,781
-vehicle_44,57LD 3568,Thaco Auman C240,17,732
-vehicle_45,52LD 82320,Hyundai HD120SL,8,748
-vehicle_46,63LD 30497,Thaco Auman C240,17,820
-vehicle_47,58LD 76082,Hyundai Xcient,18,1120
-vehicle_48,55LD 91110,Hino FG8JT7A,15,1173
-vehicle_49,51LD 91512,Jac HFC1383K,14,1198

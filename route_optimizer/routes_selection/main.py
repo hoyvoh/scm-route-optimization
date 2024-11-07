@@ -17,6 +17,7 @@ from data_collection import suppliers, vehicles, parkings, destination_v2
 # Load environment variables
 load_dotenv()
 
+
 # Add project root to the system path once
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -34,13 +35,23 @@ def convert_to_hours(time_str):
     days, hours, minutes, seconds = (int(match.group(i) or 0) for i in range(1, 5))
     return round(days * 24 + hours + minutes / 60 + seconds / 3600, 2)
 
-def get_travel_data(origin, destination):
+def convert_distance_to_km(distance_text):
+    numeric_distance = float(re.sub(r'[^\d.]', '', distance_text)) if distance_text else 0
+
+    if 'km' in distance_text:
+        distance_km = numeric_distance 
+    else :
+        distance_km = numeric_distance / 1000 
+
+    return distance_km
+
+def get_travel_data(origin, destination, api_key=API_KEY):
     """Fetch travel time and distance between addresses using GoMap API."""
     url = 'https://routes.gomaps.pro/directions/v2:computeRoutes'
     headers = {
         'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': API_KEY
+        'X-Goog-Api-Key': api_key
     }
     data = {
         "origin": {"address": origin},
@@ -53,7 +64,7 @@ def get_travel_data(origin, destination):
     distance_text = response.get('routes', [{}])[0].get('localizedValues', {}).get('distance', {}).get('text', '0')
 
     hours = convert_to_hours(duration_text)
-    distance_km = float(re.sub(r'[^\d.]', '', distance_text)) if distance_text else 0
+    distance_km = convert_distance_to_km(distance_text=distance_text)
     return hours, distance_km
 
 def find_closest_parking(mid_point, parking_areas):
@@ -67,10 +78,9 @@ def find_closest_parking(mid_point, parking_areas):
     return closest_parking if closest_parking['distance'] != float('inf') else None
 
 def fragment_route(supplier, destination, parking_areas):
-    """Recursively fragment route if travel time exceeds 8 hours."""
     travel_hours, _ = get_travel_data(supplier['address'], destination['address'])
     
-    if travel_hours <= 8:
+    if travel_hours <= 10.0:
         return [[supplier['address'], destination['address']]]
 
     mid_point = (
@@ -78,11 +88,34 @@ def fragment_route(supplier, destination, parking_areas):
         (supplier['longitude'] + destination['longitude']) / 2
     )
     closest_parking = find_closest_parking(mid_point, parking_areas)
+    
     if closest_parking is not None:
-        return (fragment_route(supplier, closest_parking, parking_areas) + 
-                fragment_route(closest_parking, destination, parking_areas))
+        remaining_parking_areas = parking_areas.drop(
+            parking_areas[parking_areas == closest_parking].index
+        )
+        
+        return (
+            fragment_route(supplier, closest_parking, remaining_parking_areas) + 
+            fragment_route(closest_parking, destination, remaining_parking_areas)
+        )
     
     return [[supplier['address'], destination['address']]]
+
+def get_fuel_consumption(weight):
+    if weight < 2.5:
+        return 6
+    elif weight < 5.0:
+        return 12
+    elif weight <7.5:
+        return 10
+    elif weight < 10:
+        return 12
+    elif weight < 12.5:
+        return 15
+    elif weight <15:
+        return 18
+    else:
+        return 20
 
 def calculate_costs(route, vehicle, weight, supplier_price):
     """Calculate costs based on travel distance and time."""
@@ -93,8 +126,9 @@ def calculate_costs(route, vehicle, weight, supplier_price):
         total_km += distance
         total_hours += hours
 
-    driver_cost = 24000 * ((total_hours % 8) + 1) * 0.5 + 24000*total_hours
-    fuel_cost = total_km*9.3* 21427.5 / 100 # 9.3/100 (L/Km)
+    driver_cost = 62500 * ((total_hours % 10)) * 0.5 + 62500 * total_hours
+    comsumption = get_fuel_consumption(weight=vehicle['capacity'])
+    fuel_cost = total_km*comsumption* 21427.5 / 100 
     goods_cost = supplier_price * weight * 1000
 
     return {
@@ -152,15 +186,16 @@ def route_selection(suppliers, parking_areas, destination, vehicles):
     print(f'== Possible routes calculation finished after {end-start}s! ==')
     return routes
 
+
 if __name__ == '__main__':
 
     destination= {
-            'id': f'dest_5', #  5
-            'address': destination_v2['address'].to_list()[4] #  4
+            'id': f'dest_5', # 4 5
+            'address': destination_v2['address'].to_list()[4] # 3 4
         }
     routes = route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5])
     hard_routes = {}
-    hard_routes[destination_v2['address'].to_list()[4]] = routes
+    hard_routes[destination['address']] = routes
     # for i, dest in enumerate(destination_v2['address'].to_list()[0], start=1):
     #     print('Selecting potential routes for', dest)
     #     print('==START SELECTION==')
@@ -171,5 +206,5 @@ if __name__ == '__main__':
     #     routes = route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5])
     #     hard_routes[dest] = routes
     #     print('==END SELECTION==')
-    with open('hard_route_4.txt', 'w', encoding='utf') as f: # _4
+    with open('hard_route_4.txt', 'w', encoding='utf8') as f: # 3 4
         f.write(str(hard_routes))
