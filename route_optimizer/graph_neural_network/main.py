@@ -46,30 +46,27 @@ class RouteOptimizerGCN(nn.Module):
         total_weight = 0
         total_cost = 0
         selected_routes = []
-        tolerance = 1e-5  # Tolerance for floating-point errors
-        
-        # First pass: select routes based on high scores
+
         for idx in sorted_indices:
             idx = idx.item()
-            route = routes_data_df.iloc[idx]  # Get the actual route data
 
-            # Check if this route can be added without violating demand and travel time
+            route = routes_data_df.iloc[idx]
+
             if total_weight >= demand:
-                # selected_routes.append(idx)
-                break  # Skip if adding this route exceeds demand
-            if route['travel_hours'] > available_hours:
-                continue  # Skip if the route's travel time exceeds available hours
+                break  
 
-            # Break early if we meet or exceed the demand with tolerance
-            if total_weight >= demand - tolerance:
-                print('breaking check:', total_weight)
-                break
-        
-        print(selected_routes)
-        print(total_cost)
-        print(total_weight)
-        # Final check: if demand is met
-        if total_weight >= demand - tolerance:
+            if route['travel_hours'] > available_hours:
+                continue 
+            selected_routes.append(idx)
+            total_weight += route['weight']
+            total_cost += route['total_cost']
+
+        # print("Selected routes:", selected_routes)
+        # print("Total cost:", total_cost)
+        # print("Total weight:", total_weight)
+
+        if total_weight >= demand:
+
             return selected_routes, total_cost  
         else:
             return None, float('inf')
@@ -146,6 +143,6 @@ if __name__ == '__main__':
     sample_dest = '5/219, Đ. Thủ Khoa Huân/Tổ 4A Đ.Đ1, Thuận Giao, Thuận An, Bình Dương 75000'
     routes = hard_route[sample_dest]
     routes = [route for route in routes if route['travel_kms'] !=0.0]
-    deadline = datetime(2024, 11, 16).date() 
+    deadline = datetime(2024, 11, 29).date() 
     selected_routes = optimize(routes_data=routes, demand=demand, deadline=deadline, args=model_configs)
     print(selected_routes)
