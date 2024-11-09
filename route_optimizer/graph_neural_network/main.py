@@ -8,6 +8,8 @@ import pandas as pd
 import os
 import sys
 from datetime import datetime
+from time import time
+from itertools import combinations
 from tqdm import tqdm
 
 
@@ -20,8 +22,8 @@ from routes_selection import hard_route
 
 model_configs = {
     'learning_rate':0.1,
-    'epochs':100,
-    'penalty_factor': 1000 # set to a test num
+    'epochs':4,
+    'penalty_factor': 10e-5 # set to a test num
 }
 
 class RouteOptimizerGCN(nn.Module):
@@ -46,47 +48,65 @@ class RouteOptimizerGCN(nn.Module):
         total_weight = 0
         total_cost = 0
         selected_routes = []
-        tolerance = 1e-5  # Tolerance for floating-point errors
-        
-        # First pass: select routes based on high scores
+        tolerance = 1e-4
+        overshoot_allowance = demand * 0.1  # Allow up to 10% overshoot
+
+        # First pass: Greedy selection based on high scores
         for idx in sorted_indices:
             idx = idx.item()
-            route = routes_data_df.iloc[idx]  # Get the actual route data
+            route = routes_data_df.iloc[idx]
 
-            if (total_weight + route['weight'] <= demand - tolerance) and (route['travel_hours'] <= available_hours):
+            if (total_weight + route['weight'] <= demand + tolerance) and (route['travel_hours'] <= available_hours):
                 total_weight += route['weight']
-                total_cost += route['total_cost']  # Accumulate cost
-                selected_routes.append(idx) 
+                total_cost += route['total_cost']
+                selected_routes.append(idx)
 
-            # Break early if we meet or exceed the demand with tolerance
             if total_weight >= demand - tolerance:
-                print('breaking check:', total_weight)
                 break
 
-        # Second pass: add remaining routes if demand not met
+        # If demand is still not met, explore minimal cost combinations
         if total_weight < demand - tolerance:
-            for idx in sorted_indices[len(selected_routes):]:
-                idx = idx.item()
-                route = routes_data_df.iloc[idx]
+            best_combination = None
+            best_total_cost = float('inf')
+            
+            # Limit maximum size of combinations for efficiency (e.g., only check up to 3-item combos)
+            max_combo_size = min(3, len(sorted_indices))
+            
+            for r in range(1, max_combo_size + 1):
+                for combo_indices in combinations(sorted_indices.tolist(), r):
+                    combo_weight = sum(routes_data_df.iloc[idx]['weight'] for idx in combo_indices)
+                    
+                    # Skip combinations with insufficient total weight
+                    if combo_weight < demand * 0.8:
+                        continue
+                    
+                    combo_cost = sum(routes_data_df.iloc[idx]['total_cost'] for idx in combo_indices)
+                    combo_hours = max(routes_data_df.iloc[idx]['travel_hours'] for idx in combo_indices)
 
-                # Add route if it incrementally helps meet the demand
-                if total_weight + route['weight'] <= demand:
-                    total_weight += route['weight']
-                    total_cost += route['total_cost']
-                    selected_routes.append(idx)
+                    # Check if the combination meets demand within time limits
+                    if (combo_weight >= demand - tolerance) and (combo_hours <= available_hours):
+                        # Track the lowest-cost combination
+                        if combo_cost < best_total_cost:
+                            best_total_cost = combo_cost
+                            best_combination = list(combo_indices)
+                        
+                        # Early termination if cost is close to minimal
+                        if best_total_cost < total_cost * 1.05:
+                            break
 
-                    if total_weight >= demand:
-                        break
-        
-        print(selected_routes)
-        print(total_cost)
-        print(total_weight)
+            # Update to best combination if found
+            if best_combination:
+                selected_routes = best_combination
+                total_cost = best_total_cost
+                total_weight = sum(routes_data_df.iloc[idx]['weight'] for idx in best_combination)
 
-        # Final check: if demand is met
-        if total_weight >= demand - tolerance:
-            return selected_routes, total_cost  
-        else:
-            return None, float('inf')
+        # Debug output
+        print(f"Selected Routes: {selected_routes}")
+        print(f"Total Cost: {total_cost}")
+        print(f"Total Weight: {total_weight}")
+
+        # Final check: Ensure selected routes meet demand within tolerance
+        return selected_routes, total_cost
 
 def optimize(routes_data, demand, deadline, args=model_configs):
     node_features = []
@@ -155,10 +175,13 @@ def optimize(routes_data, demand, deadline, args=model_configs):
 
 
 if __name__ == '__main__':
-    demand = 98
+    start = time()
+    demand = 100
     sample_dest = '5/219, Đ. Thủ Khoa Huân/Tổ 4A Đ.Đ1, Thuận Giao, Thuận An, Bình Dương 75000'
     routes = hard_route[sample_dest]
     routes = [route for route in routes if route['travel_kms'] !=0.0]
     deadline = datetime(2024, 11, 16).date() 
     selected_routes = optimize(routes_data=routes, demand=demand, deadline=deadline, args=model_configs)
+    end = time()
     print(selected_routes)
+    print(f'Selection ends after:{end-start}s')
