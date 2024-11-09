@@ -21,7 +21,7 @@ from routes_selection import hard_route
 model_configs = {
     'learning_rate':0.1,
     'epochs':100,
-    'penalty_factor': 100000 # set to a test num
+    'penalty_factor': 1000 # set to a test num
 }
 
 class RouteOptimizerGCN(nn.Module):
@@ -46,7 +46,9 @@ class RouteOptimizerGCN(nn.Module):
         total_weight = 0
         total_cost = 0
         selected_routes = []
+        tolerance = 1e-5  # Tolerance for floating-point errors
         
+        # First pass: select routes based on high scores
         for idx in sorted_indices:
             idx = idx.item()
             route = routes_data_df.iloc[idx]  # Get the actual route data
@@ -58,62 +60,52 @@ class RouteOptimizerGCN(nn.Module):
             if route['travel_hours'] > available_hours:
                 continue  # Skip if the route's travel time exceeds available hours
 
-            # If feasible, add this route
-            total_weight += route['weight']
-            total_cost += route['total_cost']  # Accumulate cost
-            selected_routes.append(idx)  # Append index of selected route
-
-            # Break early if we meet the demand
-            if total_weight >= demand:
+            # Break early if we meet or exceed the demand with tolerance
+            if total_weight >= demand - tolerance:
+                print('breaking check:', total_weight)
                 break
         
         print(selected_routes)
         print(total_cost)
         print(total_weight)
-        
         # Final check: if demand is met
-        if total_weight >= demand:
-            return selected_routes, total_cost  # Return selected indices and total cost
+        if total_weight >= demand - tolerance:
+            return selected_routes, total_cost  
         else:
-            return None, float('inf')  # No feasible solution found
+            return None, float('inf')
 
 def optimize(routes_data, demand, deadline, args=model_configs):
     node_features = []
     for route in routes_data:
         node_features.append([
-            route['weight'],          # Include weight as a feature
-            route['travel_hours']     # Include travel time as a feature
+            route['weight'],
+            route['travel_hours']
         ])
     routes_data_df = pd.DataFrame(routes_data)
-    routes_data_df['idx'] = [i for i in range(len(routes_data))]
+    routes_data_df['idx'] = range(len(routes_data))
 
-    # Convert node features to tensor
     x = torch.tensor(node_features, dtype=torch.float)
     num_nodes = len(routes_data)
     edge_index = torch.combinations(torch.arange(num_nodes), r=2).T
 
-    # Create data object and initialize the GCN
     data = Data(x=x, edge_index=edge_index)
     model = RouteOptimizerGCN(num_features=x.shape[1])
     optimizer = torch.optim.SGD(model.parameters(), lr=args['learning_rate'])
 
-    # Convert deadline to total available hours from now
     current_time = datetime.now()
     deadline_datetime = datetime.combine(deadline, datetime.min.time())
-    total_available_hours = (deadline_datetime - current_time).total_seconds() / 3600  # Convert seconds to hours
+    total_available_hours = (deadline_datetime - current_time).total_seconds() / 3600
 
-    # Training
     model.train()
+    best_selected_indices = None
+    best_total_cost = float('inf')
+
     for epoch in tqdm(range(args['epochs'])):
         optimizer.zero_grad()
         
-        # Forward pass to get scores
         scores = model(data)
-
-        # Route selection based on scores
         selected_indices, total_cost = model.select_routes(scores, data, demand, total_available_hours, routes_data_df)
         
-        # Loss: total cost + penalties if constraints aren't met
         loss = torch.tensor(total_cost, dtype=torch.float, requires_grad=True)
         if selected_indices is not None:
             total_weight = sum(routes_data_df.iloc[idx]['weight'] for idx in selected_indices)
@@ -126,20 +118,23 @@ def optimize(routes_data, demand, deadline, args=model_configs):
                 deadline_penalty = (total_travel_hours - total_available_hours) * args['penalty_factor']
                 loss += deadline_penalty
             
-            # Backpropagate and optimize
+            if total_weight >= demand and total_cost < best_total_cost:
+                best_selected_indices = selected_indices
+                best_total_cost = total_cost
+
             loss.backward()
             optimizer.step()
 
-    # Final evaluation to get the best delivery plan
     model.eval()
     with torch.no_grad():
         scores = model(data)
         selected_indices, total_cost = model.select_routes(scores, data, demand, total_available_hours, routes_data_df)
-    print('at model, selected indecies', selected_indices)
-    if selected_indices:
-        selected_routes_df = routes_data_df.iloc[selected_indices]
+        
+    final_selected_indices = selected_indices if selected_indices else best_selected_indices
+    if final_selected_indices:
+        selected_routes_df = routes_data_df.iloc[final_selected_indices]
         selected_routes_list = selected_routes_df.to_dict(orient='records')
-        return selected_routes_list  # Return selected routes
+        return selected_routes_list
     else:
         print("No feasible plan meets the demand.")
         return None
@@ -147,8 +142,10 @@ def optimize(routes_data, demand, deadline, args=model_configs):
 
 if __name__ == '__main__':
     demand = 5
+
     sample_dest = '5/219, Đ. Thủ Khoa Huân/Tổ 4A Đ.Đ1, Thuận Giao, Thuận An, Bình Dương 75000'
     routes = hard_route[sample_dest]
+    routes = [route for route in routes if route['travel_kms'] !=0.0]
     deadline = datetime(2024, 11, 16).date() 
     selected_routes = optimize(routes_data=routes, demand=demand, deadline=deadline, args=model_configs)
     print(selected_routes)
