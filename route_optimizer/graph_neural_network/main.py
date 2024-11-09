@@ -53,35 +53,21 @@ class RouteOptimizerGCN(nn.Module):
             idx = idx.item()
             route = routes_data_df.iloc[idx]  # Get the actual route data
 
-            if (total_weight + route['weight'] <= demand - tolerance) and (route['travel_hours'] <= available_hours):
-                total_weight += route['weight']
-                total_cost += route['total_cost']  # Accumulate cost
-                selected_routes.append(idx) 
+            # Check if this route can be added without violating demand and travel time
+            if total_weight >= demand:
+                # selected_routes.append(idx)
+                break  # Skip if adding this route exceeds demand
+            if route['travel_hours'] > available_hours:
+                continue  # Skip if the route's travel time exceeds available hours
 
             # Break early if we meet or exceed the demand with tolerance
             if total_weight >= demand - tolerance:
                 print('breaking check:', total_weight)
                 break
-
-        # Second pass: add remaining routes if demand not met
-        if total_weight < demand - tolerance:
-            for idx in sorted_indices[len(selected_routes):]:
-                idx = idx.item()
-                route = routes_data_df.iloc[idx]
-
-                # Add route if it incrementally helps meet the demand
-                if total_weight + route['weight'] <= demand:
-                    total_weight += route['weight']
-                    total_cost += route['total_cost']
-                    selected_routes.append(idx)
-
-                    if total_weight >= demand:
-                        break
         
         print(selected_routes)
         print(total_cost)
         print(total_weight)
-
         # Final check: if demand is met
         if total_weight >= demand - tolerance:
             return selected_routes, total_cost  
@@ -155,7 +141,8 @@ def optimize(routes_data, demand, deadline, args=model_configs):
 
 
 if __name__ == '__main__':
-    demand = 98
+    demand = 5
+
     sample_dest = '5/219, Đ. Thủ Khoa Huân/Tổ 4A Đ.Đ1, Thuận Giao, Thuận An, Bình Dương 75000'
     routes = hard_route[sample_dest]
     routes = [route for route in routes if route['travel_kms'] !=0.0]
