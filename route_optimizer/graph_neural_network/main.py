@@ -49,6 +49,7 @@ class RouteOptimizerGCN(nn.Module):
 
         for idx in sorted_indices:
             idx = idx.item()
+
             route = routes_data_df.iloc[idx]
 
             if total_weight >= demand:
@@ -65,6 +66,7 @@ class RouteOptimizerGCN(nn.Module):
         # print("Total weight:", total_weight)
 
         if total_weight >= demand:
+
             return selected_routes, total_cost  
         else:
             return None, float('inf')
