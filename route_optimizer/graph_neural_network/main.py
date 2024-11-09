@@ -52,8 +52,9 @@ class RouteOptimizerGCN(nn.Module):
             route = routes_data_df.iloc[idx]  # Get the actual route data
 
             # Check if this route can be added without violating demand and travel time
-            if total_weight + route['weight'] > demand:
-                continue  # Skip if adding this route exceeds demand
+            if total_weight >= demand:
+                # selected_routes.append(idx)
+                break  # Skip if adding this route exceeds demand
             if route['travel_hours'] > available_hours:
                 continue  # Skip if the route's travel time exceeds available hours
 
@@ -65,9 +66,11 @@ class RouteOptimizerGCN(nn.Module):
             # Break early if we meet the demand
             if total_weight >= demand:
                 break
+        
         print(selected_routes)
         print(total_cost)
         print(total_weight)
+        
         # Final check: if demand is met
         if total_weight >= demand:
             return selected_routes, total_cost  # Return selected indices and total cost
@@ -143,7 +146,7 @@ def optimize(routes_data, demand, deadline, args=model_configs):
 
 
 if __name__ == '__main__':
-    demand = 180
+    demand = 5
     sample_dest = '5/219, Đ. Thủ Khoa Huân/Tổ 4A Đ.Đ1, Thuận Giao, Thuận An, Bình Dương 75000'
     routes = hard_route[sample_dest]
     deadline = datetime(2024, 11, 16).date() 
