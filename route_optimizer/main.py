@@ -27,7 +27,7 @@ def check_dest(destination):
         return filter_meaningful_routes(hard_route[destination['address']])
     else:
         print("Route selection process started for a new destination...\n\nIt will takes up to 10 minutes to compute.\n\n")
-        return filter_meaningful_routes(route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5]))
+        return filter_meaningful_routes(route_selection(suppliers=suppliers[:45], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:20]))
 
 
 def parse_any_date(date_string):
