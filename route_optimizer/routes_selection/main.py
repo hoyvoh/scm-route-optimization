@@ -17,7 +17,6 @@ from data_collection import suppliers, vehicles, parkings, destination_v2
 # Load environment variables
 load_dotenv()
 
-
 # Add project root to the system path once
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -60,11 +59,12 @@ def get_travel_data(origin, destination, api_key=API_KEY):
     }
 
     response = requests.post(url, headers=headers, json=data).json()
-    duration_text = response.get('routes', [{}])[0].get('localizedValues', {}).get('duration', {}).get('text', '0 giờ')
+    # duration_text = response.get('routes', [{}])[0].get('localizedValues', {}).get('duration', {}).get('text', '0 giờ')
     distance_text = response.get('routes', [{}])[0].get('localizedValues', {}).get('distance', {}).get('text', '0')
 
-    hours = convert_to_hours(duration_text)
+    # hours = convert_to_hours(duration_text)
     distance_km = convert_distance_to_km(distance_text=distance_text)
+    hours = distance_km/40.0 # 40km/h
     return hours, distance_km
 
 def find_closest_parking(mid_point, parking_areas):
@@ -90,9 +90,7 @@ def fragment_route(supplier, destination, parking_areas):
     closest_parking = find_closest_parking(mid_point, parking_areas)
     
     if closest_parking is not None:
-        remaining_parking_areas = parking_areas.drop(
-            parking_areas[parking_areas == closest_parking].index
-        )
+        remaining_parking_areas = parking_areas[parking_areas.index != closest_parking.index[0]]
         
         return (
             fragment_route(supplier, closest_parking, remaining_parking_areas) + 
@@ -193,7 +191,7 @@ if __name__ == '__main__':
             'id': f'dest_5', # 4 5
             'address': destination_v2['address'].to_list()[4] # 3 4
         }
-    routes = route_selection(suppliers=suppliers[:30], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:5])
+    routes = route_selection(suppliers=suppliers[:45], parking_areas=parkings[:10], destination=destination, vehicles=vehicles[:20])
     hard_routes = {}
     hard_routes[destination['address']] = routes
     # for i, dest in enumerate(destination_v2['address'].to_list()[0], start=1):
