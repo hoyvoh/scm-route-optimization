@@ -7,7 +7,7 @@ The Supply Chain Route Optimization Service is a backend module designed to solv
 
 Key features include an API-based interface for seamless integration, robust data collection and preprocessing mechanisms, and tools for constructing realistic logistics networks. The optimization process accounts for Vietnam-specific trucking costs, including labor and fuel expenses, while excluding fixed costs for simplification. 
 
-For further details, refer to the (Project Report)[https://docs.google.com/document/d/1CVOrCFgL8f4RweLlvXj8RGPTKg59RrnCVaBfGjlTdNg/edit?tab=t.0]
+For further details, refer to the [Project Report](https://docs.google.com/document/d/1CVOrCFgL8f4RweLlvXj8RGPTKg59RrnCVaBfGjlTdNg/edit?tab=t.0)
 
 ## Running the Service
 To set up and run the service:
